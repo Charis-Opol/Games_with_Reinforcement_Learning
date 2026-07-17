@@ -1,4 +1,5 @@
 import pygame
+import random
 
 from bird import Bird
 from pipe import Pipe
@@ -78,8 +79,58 @@ class FlappyBirdGame:
     # AI controls
         else:
 
-            if action == 1:
+            # Normalize different possible action types (int, list/tuple one-hot,
+            # numpy array, torch tensor) to a single integer 0 or 1.
+            ai_action = 0
 
+            # torch.Tensor
+            try:
+                import torch
+
+                if isinstance(action, torch.Tensor):
+                    if action.dim() == 0:
+                        ai_action = int(action.item())
+                    else:
+                        ai_action = int(action.argmax().item())
+                else:
+                    raise Exception()
+            except Exception:
+                # numpy array
+                try:
+                    import numpy as np
+
+                    if isinstance(action, np.ndarray):
+                        if action.ndim == 0:
+                            ai_action = int(action.item())
+                        else:
+                            ai_action = int(action.argmax())
+                    else:
+                        raise Exception()
+                except Exception:
+                    # list/tuple or plain int-like
+                    if isinstance(action, (list, tuple)):
+                        try:
+                            if len(action) == 2:
+                                # assume one-hot [1,0] or [0,1]
+                                ai_action = int(action.index(max(action)))
+                            else:
+                                ai_action = int(action[0])
+                        except Exception:
+                            try:
+                                ai_action = int(action)
+                            except Exception:
+                                ai_action = 0
+                    else:
+                        try:
+                            ai_action = int(action)
+                        except Exception:
+                            ai_action = 0
+
+            # optional rule-based assistance
+            if ASSISTED_MODE and random.random() < ASSIST_PROBABILITY:
+                ai_action = self.assist_action(ai_action)
+
+            if ai_action == 1:
                 self.bird.jump()
 
         self.bird.update()
@@ -171,6 +222,26 @@ class FlappyBirdGame:
 
             reward = 10
 
+        # real-time position-based reward shaping (vertical + horizontal closeness)
+        try:
+            next_pipe = self.pipes[0]
+            if len(self.pipes) > 1 and self.pipes[0].x < self.bird.x:
+                next_pipe = self.pipes[1]
+
+            gap_center_y = next_pipe.height + PIPE_GAP / 2
+            gap_center_x = next_pipe.x + PIPE_WIDTH / 2
+
+            v_dist = abs(self.bird.y - gap_center_y)
+            h_dist = abs(self.bird.x - gap_center_x)
+
+            v_score = max(0.0, 1.0 - (v_dist / HEIGHT)) * SHAPING_VERTICAL_WEIGHT
+            h_score = max(0.0, 1.0 - (h_dist / WIDTH)) * SHAPING_HORIZONTAL_WEIGHT
+
+            shaping = v_score + h_score
+            reward += shaping
+        except Exception:
+            pass
+
         return reward, done, self.score
     
     def get_state(self):
@@ -189,3 +260,23 @@ class FlappyBirdGame:
             next_pipe.height + PIPE_GAP
 
     ]
+
+    ###################################
+    def assist_action(self, current_action):
+        """Simple rule-based corrective action: if bird is below gap center by more than
+        ASSIST_MARGIN pixels, request a jump. Otherwise keep current action."""
+        try:
+            # determine the next relevant pipe
+            next_pipe = self.pipes[0]
+            if len(self.pipes) > 1 and self.pipes[0].x < self.bird.x:
+                next_pipe = self.pipes[1]
+
+            gap_center = next_pipe.height + PIPE_GAP / 2
+            if self.bird.y > gap_center + ASSIST_MARGIN:
+                return 1
+            if self.bird.y < gap_center - ASSIST_MARGIN:
+                return 0
+        except Exception:
+            pass
+
+        return current_action

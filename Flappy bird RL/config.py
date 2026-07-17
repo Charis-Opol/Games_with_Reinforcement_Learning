@@ -17,11 +17,14 @@ FPS = 60
 
 BIRD_RADIUS = 20
 
-GRAVITY = 0.55
+GRAVITY = 0.65
 
-JUMP_STRENGTH = -10
+JUMP_STRENGTH = -9
 
-MAX_FALL_SPEED = 12
+MAX_FALL_SPEED = 10
+
+# Minimum number of frames between jumps (prevents jump spamming)
+JUMP_COOLDOWN_FRAMES = 5
 
 ROTATION_SPEED = 3
 
@@ -70,3 +73,18 @@ GROUND_COLOR = (160, 82, 45)
 FONT_SIZE = 36
 
 TEXT_COLOR = (255, 255, 255)
+
+# ===========================
+# Assistance & shaping
+# ===========================
+# Enable a simple rule-based assistant that can override/guide actions
+ASSISTED_MODE = False
+# Probability (0-1) that the assistant will be applied when enabled
+ASSIST_PROBABILITY = 0.2
+# Margin in pixels around gap center to trigger a corrective jump
+ASSIST_MARGIN = 15
+# Reward shaping weight (added fraction when bird is closer to gap center)
+SHAPING_WEIGHT = 0.4
+# Separate shaping weights for vertical and horizontal proximity
+SHAPING_VERTICAL_WEIGHT = 0.4
+SHAPING_HORIZONTAL_WEIGHT = 0.2

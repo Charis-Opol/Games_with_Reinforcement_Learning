@@ -13,12 +13,19 @@ class Bird:
         self.velocity = 0
 
         self.rotation = 0
+        # frames since last jump (used to enforce jump cooldown)
+        self.frames_since_jump = JUMP_COOLDOWN_FRAMES
 
     #######################################
 
     def jump(self):
 
+        # enforce a short cooldown to prevent jump-spam
+        if self.frames_since_jump < JUMP_COOLDOWN_FRAMES:
+            return
+
         self.velocity = JUMP_STRENGTH
+        self.frames_since_jump = 0
 
     #######################################
 
@@ -31,6 +38,9 @@ class Bird:
             self.velocity = MAX_FALL_SPEED
 
         self.y += self.velocity
+
+        # increment jump cooldown counter
+        self.frames_since_jump += 1
 
         if self.velocity < 0:
 
