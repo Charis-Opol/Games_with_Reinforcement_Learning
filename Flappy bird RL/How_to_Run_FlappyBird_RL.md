@@ -31,7 +31,7 @@ source .venv/bin/activate
 ## 3. Install the required packages
 
 ``` bash
-pip install pygame numpy matplotlib torch
+pip install pygame-ce numpy matplotlib torch
 ```
 
 Or, if you have a `requirements.txt` file:
@@ -123,7 +123,7 @@ The trained model will play Flappy Bird automatically.
 Install the missing package:
 
 ``` bash
-pip install pygame numpy matplotlib torch
+pip install pygame-ce numpy matplotlib torch
 ```
 
 ## Model file not found
